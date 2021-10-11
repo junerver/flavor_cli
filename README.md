@@ -1,0 +1,2 @@
+# flavor_cli
+py编写的快速创建flavor文件夹与复制文件的脚本
