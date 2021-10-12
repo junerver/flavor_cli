@@ -4,7 +4,9 @@ import os
 import shutil
 
 root = './app/src'
-fromPath = root + '/main'
+main_path = root + '/main'
+test_path = root + '/test'
+android_test_path = root + '/androidTest'
 # 默认不是一个新变体
 is_new_variant = False
 
@@ -62,19 +64,31 @@ def main(file_name, variant_name):
     print("需要移动的文件名称：" + file_name)
     print("需要创建的变体名称：" + variant_name)
 
-    # 加入新变体之前的全部旧变体
+    # 加入新变体之前的全部旧变体，用于拷贝旧变体中文件到新变体
     old_variants = list_all_files(root, True)
-    nv_path = root + '/' + variant_name
-    old_variants.remove(fromPath)
-    old_variants.remove(nv_path)
+    # 新变体路径
+    new_variant_path = root + '/' + variant_name
+    old_variants.remove(main_path)
+    old_variants.remove(new_variant_path)
+    # 过滤test
+    if test_path in old_variants:
+        old_variants.remove(test_path)
+    if android_test_path in old_variants:
+        old_variants.remove(android_test_path)
     print("当前项目中存在的变体(不包含新建):")
     print(old_variants)
 
     # 列出main中全部文件
-    files = list_all_files(fromPath)
+    files = list_all_files(main_path)
+    # 包含新变体在内的全部变体，用于复制新文件到全部变体
     variants = list_all_files(root, True)
     # 移除main 的包含新变体的全部变体目录
-    variants.remove(fromPath)
+    variants.remove(main_path)
+    # 过滤test
+    if test_path in variants:
+        variants.remove(test_path)
+    if android_test_path in variants:
+        variants.remove(android_test_path)
     print("当前项目中存在的变体(包含新建):")
     print(variants)
 
@@ -84,7 +98,7 @@ def main(file_name, variant_name):
             # 当前已经存在一个或多个变体需要复制旧变体文件到新变体中去
             if len(old_variants) == 1:
                 # 只存在一个变体，直接复制该变体文件到新变体
-                copy_path(old_variants[0], root + "/" + variant_name)
+                copy_path(old_variants[0], new_variant_path)
             else:
                 # 多个变体，手动选择
                 var_index = 1
@@ -92,20 +106,21 @@ def main(file_name, variant_name):
                     print('变体序号' + str(var_index) + "：" + v)
                     var_index += 1
                 select_index = input('输入需要拷贝的变体序号，将从该变体复制全部文件到新变体：')
-                copy_path(old_variants[int(select_index) - 1], root + "/" + variant)
+                copy_path(old_variants[int(select_index) - 1], new_variant_path)
 
     yes_or_no = input('请确认以上信息（Y）：')
     if not (yes_or_no.lower() == 'y') or not (yes_or_no.lower() != 'yes'):
         print("结束运行！")
         return
 
+    # 所有匹配的文件 & 所在目录
     orign_files = []
     dir_paths = []
     index = 1
     for f in files:
         if file_name in f:
             print("文件序号" + str(index) + ": " + f)
-            path = f.replace(fromPath, '').replace(file_name, '')
+            path = f.replace(main_path, '').replace(file_name, '')
             # 源文件路径
             orign_files.append(f)
             dir_paths.append(path)
@@ -113,25 +128,25 @@ def main(file_name, variant_name):
     # 如果数组数量大于1 要求输入
     if len(orign_files) > 1:
         select_index = input('输入选择的文件序号：')
-        orignFile = orign_files[int(select_index) - 1]
-        dirpath = dir_paths[int(select_index) - 1]
+        orign_file = orign_files[int(select_index) - 1]
+        dir_path = dir_paths[int(select_index) - 1]
     else:
-        orignFile = orign_files[0]
-        dirpath = dir_paths[0]
+        orign_file = orign_files[0]
+        dir_path = dir_paths[0]
 
     for d in variants:
         # flavor对应的文件层级路径
-        flavor_path = d + dirpath
-        # 如果该层级在 则创建
+        flavor_path = d + dir_path
+        # 如果该层级不存在 则创建
         if not os.path.exists(flavor_path):
             os.makedirs(flavor_path)
         # 复制目标源文件到目标文件夹
         if not os.path.exists(flavor_path + file_name):
             # 复制文件
-            shutil.copy(orignFile, flavor_path)
+            shutil.copy(orign_file, flavor_path)
 
     # 移除源文件
-    os.remove(orignFile)
+    os.remove(orign_file)
     print()
     print("====================执行完毕====================")
 
