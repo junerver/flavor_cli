@@ -61,15 +61,16 @@ def list_all_files(rootdir, onlydir=False):
 
 
 def main(file_name, variant_name):
-    print("需要移动的文件名称：" + file_name)
-    print("需要创建的变体名称：" + variant_name)
+    print("需要移动的文件名称：'" + file_name+"'")
+    print("需要创建的变体名称：'" + variant_name+"'")
 
     # 加入新变体之前的全部旧变体，用于拷贝旧变体中文件到新变体
     old_variants = list_all_files(root, True)
     # 新变体路径
-    new_variant_path = root + '/' + variant_name
+    if is_new_variant:
+        new_variant_path = root + '/' + variant_name
+        old_variants.remove(new_variant_path)
     old_variants.remove(main_path)
-    old_variants.remove(new_variant_path)
     # 过滤test
     if test_path in old_variants:
         old_variants.remove(test_path)
@@ -99,6 +100,7 @@ def main(file_name, variant_name):
             if len(old_variants) == 1:
                 # 只存在一个变体，直接复制该变体文件到新变体
                 copy_path(old_variants[0], new_variant_path)
+                print("====================变体拷贝完成====================")
             else:
                 # 多个变体，手动选择
                 var_index = 1
@@ -107,11 +109,7 @@ def main(file_name, variant_name):
                     var_index += 1
                 select_index = input('输入需要拷贝的变体序号，将从该变体复制全部文件到新变体：')
                 copy_path(old_variants[int(select_index) - 1], new_variant_path)
-
-    yes_or_no = input('请确认以上信息（Y）：')
-    if not (yes_or_no.lower() == 'y') or not (yes_or_no.lower() != 'yes'):
-        print("结束运行！")
-        return
+                print("====================变体拷贝完成====================")
 
     # 所有匹配的文件 & 所在目录
     orign_files = []
@@ -130,9 +128,19 @@ def main(file_name, variant_name):
         select_index = input('输入选择的文件序号：')
         orign_file = orign_files[int(select_index) - 1]
         dir_path = dir_paths[int(select_index) - 1]
-    else:
+    elif len(orign_files) == 1:
         orign_file = orign_files[0]
         dir_path = dir_paths[0]
+    else:
+        print('没有在目录中找到该文件，你文件名输入正确么臭弟弟？')
+        return
+
+    print('\n所选文件：'+orign_file)
+    print('文件目录层级：'+dir_path)
+    yes_or_no = input('请确认以上信息（Y）：')
+    if not (yes_or_no.lower() == 'y') or not (yes_or_no.lower() != 'yes'):
+        print("结束运行！")
+        return
 
     for d in variants:
         # flavor对应的文件层级路径
@@ -145,8 +153,9 @@ def main(file_name, variant_name):
             # 复制文件
             shutil.copy(orign_file, flavor_path)
 
-    # 移除源文件
-    os.remove(orign_file)
+    # 移除源文件,因为xml会自动合并一般不需要移除
+    if not orign_file.endswith('xml'):
+        os.remove(orign_file)
     print()
     print("====================执行完毕====================")
 
